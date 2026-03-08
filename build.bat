@@ -12,11 +12,11 @@ if errorlevel 1 (
 )
 
 echo [1/2] Installing PyInstaller...
-pip install pyinstaller
+python -m pip install pyinstaller
 
 echo.
 echo [2/2] Building executable...
-pyinstaller --onefile --name "luaboost_localizer" --distpath . --clean luaboost_localizer.py
+python -m PyInstaller --onefile --name "luaboost_localizer" --distpath . --clean luaboost_localizer.py
 
 echo.
 echo Cleaning up build artifacts...
