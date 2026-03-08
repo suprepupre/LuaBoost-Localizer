@@ -16,9 +16,19 @@ pip install pyinstaller
 
 echo.
 echo [2/2] Building executable...
-pyinstaller --onefile --name "luaboost_localizer" --icon=NONE luaboost_localizer.py
+pyinstaller --onefile --name "luaboost_localizer" --distpath . --clean luaboost_localizer.py
 
 echo.
-echo Done! Output: dist\luaboost_localizer.exe
+echo Cleaning up build artifacts...
+if exist build rd /s /q build
+if exist __pycache__ rd /s /q __pycache__
+if exist luaboost_localizer.spec del luaboost_localizer.spec
+
+echo.
+if exist luaboost_localizer.exe (
+    echo SUCCESS: luaboost_localizer.exe created in current folder
+) else (
+    echo ERROR: Build failed
+)
 echo.
 pause
