@@ -183,7 +183,8 @@ def tokenize_lua(source: str):
 def find_existing_locals(code_tokens):
     existing = set()
     full_code = ''.join(t.text for t in code_tokens if t.kind == Token.CODE)
-    for m in re.finditer(r'\blocal\s+((?:[a-zA-Z_]\w*\s*,\s*)*[a-zA-Z_]\w*)\s*=\s*((?:(?:[a-zA-Z_]\w*\.)?[a-zA-Z_]\w*\s*,\s*)*(?:[a-zA-Z_]\w*\.)?[a-zA-Z_]\w*)', full_code):
+    pattern = r'\blocal\s+((?:[a-zA-Z_]\w*\s*,\s*)*[a-zA-Z_]\w*)\s*=\s*((?:(?:[a-zA-Z_]\w*\.)?[a-zA-Z_]\w*\s*,\s*)*(?:[a-zA-Z_]\w*\.)?[a-zA-Z_]\w*)'
+    for m in re.finditer(pattern, full_code):
         for name in m.group(1).split(','): existing.add(name.strip())
         for val in m.group(2).split(','): existing.add(val.strip())
     return existing
@@ -271,7 +272,7 @@ def apply_replacements(source, repl_map):
 # ============================================================
 # GUI Application
 # ============================================================
-class RedirectText(object):
+class RedirectText:
     def __init__(self, text_widget):
         self.text_space = text_widget
 
@@ -325,10 +326,10 @@ class LuaBoostApp:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=(0, 10))
         
-        self.btn_run = tk.Button(btn_frame, text="⚡ Optimize Addons", font=("Segoe UI", 11, "bold"), bg="#4CAF50", fg="white", command=self.start_optimization)
+        self.btn_run = tk.Button(btn_frame, text="Optimize Addons", font=("Segoe UI", 11, "bold"), bg="#4CAF50", fg="white", command=self.start_optimization)
         self.btn_run.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 5), ipady=5)
         
-        self.btn_undo = tk.Button(btn_frame, text="↺ Undo All Changes", font=("Segoe UI", 11, "bold"), bg="#F44336", fg="white", command=self.start_undo)
+        self.btn_undo = tk.Button(btn_frame, text="Undo All Changes", font=("Segoe UI", 11, "bold"), bg="#F44336", fg="white", command=self.start_undo)
         self.btn_undo.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0), ipady=5)
 
         ttk.Label(main_frame, text="Log Output:").pack(anchor=tk.W)
@@ -342,7 +343,7 @@ class LuaBoostApp:
         sys.stdout = RedirectText(self.console)
         
         print(f"Welcome to LuaBoost Localizer v{__version__}!")
-        print("Please select your WoW/Interface/AddOns folder and click 'Optimize Addons'.")
+        print("Select your WoW/Interface/AddOns folder and click 'Optimize Addons'.")
         print("Backups (.lua.bak) are automatically created.\n")
 
     def browse_folder(self):
@@ -415,7 +416,6 @@ class LuaBoostApp:
         for dirpath, dirnames, filenames in os.walk(target_path):
             basename = os.path.basename(dirpath).lower()
             
-            # Skip common library folders implicitly
             if basename in ('libs', 'lib', 'libraries', 'embeds', '.git', 'astrolabe'):
                 dirnames.clear()
                 continue
@@ -423,14 +423,12 @@ class LuaBoostApp:
             rel_path = os.path.relpath(dirpath, target_path).lower()
             addon_name = rel_path.split(os.sep)[0] if os.sep in rel_path else rel_path
             
-            # Skip excluded addon names completely
             if addon_name in exclude:
                 dirnames.clear()
                 continue
                 
             for filename in filenames:
                 lower_file = filename.lower()
-                # Skip .lua files that are known to break (Libraries)
                 if not lower_file.endswith('.lua'): continue
                 if any(s in lower_file for s in ['locale', 'localization', 'locals.lua', 'enus.lua', 'kokr.lua', 'ruru.lua', 'dongle', 'libstub', 'callbackhandler']):
                     continue
@@ -476,14 +474,12 @@ class LuaBoostApp:
 
             inject_at = find_injection_point(source)
             
-            # Fix from v1.0.0: Replace dotted calls in the original source FIRST
             modified_source = source
             if replace_dotted and repl_map:
                 dotted = {k: v for k, v in repl_map.items() if '.' in k}
                 if dotted:
                     modified_source = apply_replacements(source, dotted)
             
-            # THEN insert the generated block so we don't replace its contents
             new_source = modified_source[:inject_at] + '\n' + local_block + '\n' + modified_source[inject_at:]
 
             stats["mod"] += 1
